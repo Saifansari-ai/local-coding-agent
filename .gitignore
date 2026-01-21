@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+venv/
+
+# OS
+.DS_Store
+
+# ChromaDB
+storage/chroma/
+
+# SQLite
+storage/*.sqlite
+
+# Logs
+*.log
+
+# llama.cpp artifacts
+*.gguf
+
+# Editor
+.vscode/
