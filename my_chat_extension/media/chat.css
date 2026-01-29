@@ -1,0 +1,23 @@
+body {
+  font-family: sans-serif;
+  padding: 10px;
+}
+
+#chat {
+  height: 80vh;
+  overflow-y: auto;
+  border: 1px solid #444;
+  padding: 8px;
+}
+
+.message {
+  margin-bottom: 6px;
+}
+
+.user {
+  color: #4fc3f7;
+}
+
+.bot {
+  color: #a5d6a7;
+}

@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "@types/vscode": "^1.96.0"
+  },
+  "scripts": {
+    "compile": "npm run compile --prefix my_chat_extension",
+    "postinstall": "npm install --prefix my_chat_extension"
+  }
+}

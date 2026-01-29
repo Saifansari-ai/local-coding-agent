@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://cdnjs.cloudflare.com; script-src 'unsafe-inline' https://cdnjs.cloudflare.com vscode-resource: https:;">
+    <title>Local Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/microsoft-vscode-codicons/0.0.17/codicon.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-editor-foreground);
+            background-color: var(--vscode-editor-background);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            padding: 8px 12px;
+            border-radius: 6px;
+            max-width: 95%;
+            line-height: 1.4;
+            position: relative;
+        }
+        .message p {
+            margin: 0 0 8px 0;
+        }
+        .user {
+            align-self: flex-end;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .bot {
+            align-self: flex-start;
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            max-width: 100%;
+        }
+        
+        /* Agent Sections */
+        .agent-section {
+            margin: 8px 0;
+            border-left: 3px solid var(--vscode-textLink-foreground);
+            background: var(--vscode-editor-lineHighlightBackground);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .agent-header {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .agent-header:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+        
+        .agent-header .codicon {
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        
+        .agent-header.collapsed .codicon {
+            transform: rotate(-90deg);
+        }
+        
+        .agent-content {
+            padding: 8px 12px;
+            border-top: 1px solid var(--vscode-widget-border);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .agent-content.collapsed {
+            display: none;
+        }
+        
+        /* Agent-specific colors */
+        .agent-reasoner {
+            border-left-color: #3794ff;
+        }
+        
+        .agent-planner {
+            border-left-color: #89d185;
+        }
+        
+        .agent-generator {
+            border-left-color: #f48771;
+        }
+        
+        .agent-reviewer {
+            border-left-color: #b180d7;
+        }
+        
+        /* 6. Error Toast */
+        #toast {
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 16px;
+            border-radius: 4px;
+            z-index: 100;
+            transition: top 0.3s ease-in-out;
+        }
+        #toast.show {
+            top: 20px;
+        }
+        /* 3. Context Chips */
+        #context-bar {
+            padding: 4px 0;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .chip {
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        /* 7. Markdown Refinements */
+        blockquote {
+            border-left: 3px solid var(--vscode-textBlockQuote-border);
+            background: var(--vscode-textBlockQuote-background);
+            margin: 5px 0;
+            padding: 5px 10px;
+        }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--vscode-widget-border); padding: 6px; text-align: left; }
+        th { background: var(--vscode-editor-lineHighlightBackground); }
+        ul, ol { padding-left: 20px; margin: 5px 0; }
+        /* Code Blocks */
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            position: relative;
+            margin: 5px 0;
+        }
+        code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+        }
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+        /* Input Area */
+        .input-container {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        textarea {
+            flex: 1;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            padding: 8px;
+            resize: none;
+            min-height: 36px;
+            max-height: 150px;
+            font-family: inherit;
+            overflow-y: hidden;
+        }
+        textarea:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+        }
+        button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 2px;
+            cursor: pointer;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 8px;
+        }
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--vscode-descriptionForeground);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast"></div>
+    <div id="chat"></div>
+    <div id="context-bar"></div>
+    <div class="input-container">
+        <textarea id="input" rows="1" placeholder="Ask your local agent..."></textarea>
+        <button id="send">
+            <i class="codicon codicon-send"></i>
+        </button>
+    </div>
+    <script src="chat.js"></script>
+</body>
+</html>

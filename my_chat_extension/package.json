@@ -1,0 +1,44 @@
+{
+  "name": "local-chat-extension",
+  "displayName": "Local Chat Extension",
+  "description": "A local chat UI inside VS Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "localChat.open",
+        "title": "Open Local Chat"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "local-chat-sidebar",
+          "title": "Local Chat",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "local-chat-sidebar": [
+        {
+          "type": "webview",
+          "id": "localChat.view",
+          "name": "Local Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p ."
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/vscode": "^1.85.0"
+  }
+}
